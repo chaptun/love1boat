@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Surprise Universe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;600&family=Caveat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --p-color: #ff85a2; --bg-color: #fff5f7; }
+        body { 
+            font-family: 'Mitr', sans-serif; 
+            background: var(--bg-color); 
+            overflow: hidden; 
+            margin: 0;
+            transition: background 0.5s ease;
+        }
+        .font-hand { font-family: 'Caveat', cursive; }
+
+        /* ระบบจักรวาล */
+        .universe-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            perspective: 1000px;
+        }
+
+        .main-world {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background-size: cover; /* แก้ภาพอ้วน: ใช้ cover แทนการยืด % */
+            background-position: center;
+            box-shadow: inset -15px -15px 40px rgba(0,0,0,0.2), 0 0 50px var(--p-color);
+            border: 6px solid white;
+            z-index: 10;
+            animation: floating 4s ease-in-out infinite;
+        }
+
+        .satellite {
+            position: absolute;
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            border: 3px solid white;
+            background-size: cover; /* แก้ภาพอ้วน */
+            background-position: center;
+            top: 50%; left: 50%;
+            margin-top: -40px; margin-left: -40px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+        }
+
+        /* วงโคจรแบบ 3D */
+        @keyframes orbit1 {
+            from { transform: rotateY(0deg) translateX(180px) rotateY(0deg); z-index: 20; }
+            50% { z-index: -1; scale: 0.8; opacity: 0.5; }
+            to { transform: rotateY(360deg) translateX(180px) rotateY(-360deg); z-index: 20; }
+        }
+        @keyframes orbit2 {
+            from { transform: rotateX(0deg) translateY(160px) rotateX(0deg); z-index: 20; }
+            50% { z-index: -1; scale: 0.8; opacity: 0.5; }
+            to { transform: rotateX(360deg) translateY(160px) rotateX(-360deg); z-index: 20; }
+        }
+        @keyframes orbit3 {
+            from { transform: rotate(-45deg) translateX(200px) rotate(45deg); z-index: 20; }
+            50% { z-index: -1; scale: 0.8; opacity: 0.5; }
+            to { transform: rotate(315deg) translateX(200px) rotate(-315deg); z-index: 20; }
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.02); }
+        }
+
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
+        
+        /* สไตล์ปุ่มและ Input */
+        input, textarea { border: 1px solid #eee !important; transition: all 0.3s; }
+        input:focus { border-color: var(--p-color) !important; box-shadow: 0 0 10px rgba(255,133,162,0.2); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+    <main id="view" class="text-center z-10 p-4">
+        <div id="gift-stage" class="cursor-pointer group" onclick="openSurprise()">
+            <div class="text-[140px] drop-shadow-2xl transition-transform group-hover:scale-110 duration-500">🎁</div>
+            <p class="mt-6 text-pink-500 font-bold tracking-[0.3em] animate-pulse">TAP TO UNLOCK LOVE</p>
+        </div>
+
+        <div id="content-stage" class="hidden flex flex-col items-center">
+            <div class="universe-container mb-20 flex items-center justify-center">
+                <div id="world-main" class="main-world"></div>
+                <div id="sat1" class="satellite" style="animation: orbit1 9s linear infinite;"></div>
+                <div id="sat2" class="satellite" style="animation: orbit2 12s linear infinite;"></div>
+                <div id="sat3" class="satellite" style="animation: orbit3 15s linear infinite;"></div>
+            </div>
+            
+            <h1 id="txt-title" class="text-5xl font-bold mb-4 transition-colors duration-500">I Love You</h1>
+            <p id="txt-desc" class="text-2xl text-gray-600 font-hand max-w-sm">You're my everything.</p>
+            
+            <button onclick="location.reload()" class="mt-12 px-5 py-2 rounded-full border border-pink-200 text-pink-300 text-xs hover:bg-pink-50 transition-all">ดูอีกรอบ</button>
+        </div>
+    </main>
+
+    <button onclick="accessAdmin()" class="fixed top-5 right-5 w-10 h-10 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-gray-400">⚙️</button>
+
+    <div id="admin-panel" class="fixed inset-y-0 right-0 w-full max-w-md glass z-50 translate-x-full transition-transform duration-500 p-8 overflow-y-auto shadow-2xl">
+        <div class="flex justify-between items-center mb-8 border-b pb-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Editor Dashboard</h2>
+                <p class="text-xs text-gray-400">ปรับแต่งเซอร์ไพรส์ของคุณที่นี่</p>
+            </div>
+            <button onclick="closeAdmin()" class="text-gray-400 hover:text-black text-2xl">✕</button>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white/50 p-4 rounded-2xl border border-white">
+                <label class="block text-xs font-bold text-pink-500 mb-3 uppercase tracking-wider">📸 Photo Universe</label>
+                <div class="space-y-3">
+                    <input type="text" id="in-img-main" oninput="liveUpdate()" class="w-full p-3 rounded-xl text-sm" placeholder="URL รูปโลกหลัก (ศูนย์กลาง)">
+                    <input type="text" id="in-img-s1" oninput="liveUpdate()" class="w-full p-3 rounded-xl text-sm" placeholder="URL รูปดาวบริวาร 1">
+                    <input type="text" id="in-img-s2" oninput="liveUpdate()" class="w-full p-3 rounded-xl text-sm" placeholder="URL รูปบริวาร 2">
+                    <input type="text" id="in-img-s3" oninput="liveUpdate()" class="w-full p-3 rounded-xl text-sm" placeholder="URL รูปบริวาร 3">
+                </div>
+            </div>
+
+            <div class="bg-white/50 p-4 rounded-2xl border border-white">
+                <label class="block text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">💬 Content</label>
+                <input type="text" id="in-title" oninput="liveUpdate()" value="YOU ARE MY UNIVERSE" class="w-full p-3 rounded-xl text-sm mb-3">
+                <textarea id="in-desc" oninput="liveUpdate()" class="w-full p-3 rounded-xl text-sm h-24" placeholder="พิมพ์คำบอกรักตรงนี้..."></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Text Color</label>
+                    <input type="color" id="in-color" onchange="liveUpdate()" value="#ff85a2" class="w-full h-12 rounded-xl cursor-pointer bg-white p-1">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Background</label>
+                    <input type="color" id="in-bg" onchange="liveUpdate()" value="#fff5f7" class="w-full h-12 rounded-xl cursor-pointer bg-white p-1">
+                </div>
+            </div>
+
+            <div class="pt-6">
+                <button onclick="alert('บันทึกสำเร็จ! (จำลองระบบ)')" class="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white rounded-2xl font-bold shadow-lg hover:shadow-pink-200 transition-all active:scale-95">SAVE CHANGES</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASS = "1234"; // เปลี่ยนรหัสผ่านตรงนี้
+
+        function accessAdmin() {
+            const pw = prompt("กรุณาใส่รหัสผ่านผู้จัดการ:");
+            if(pw === ADMIN_PASS) {
+                document.getElementById('admin-panel').classList.remove('translate-x-full');
+            } else if(pw !== null) {
+                alert("รหัสผ่านไม่ถูกต้อง!");
+            }
+        }
+
+        function closeAdmin() {
+            document.getElementById('admin-panel').classList.add('translate-x-full');
+        }
+
+        function openSurprise() {
+            // เล่นเอฟเฟกต์พลุ
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff85a2', '#ffb6c1', '#ffffff', '#ff69b4']
+            });
+
+            // ซ่อนกล่องและแสดงเนื้อหา
+            const gift = document.getElementById('gift-stage');
+            gift.style.transition = "all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)";
+            gift.style.transform = "scale(0) rotate(180deg)";
+            gift.style.opacity = "0";
+
+            setTimeout(() => {
+                gift.classList.add('hidden');
+                const content = document.getElementById('content-stage');
+                content.classList.remove('hidden');
+                liveUpdate(); // โหลดข้อมูลล่าสุด
+            }, 600);
+        }
+
+        function liveUpdate() {
+            // ดึงค่าจากหลังบ้าน
+
+            
+            const mainImg = document.getElementById('in-img-main').value || 'https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?w=600';
+            const s1 = document.getElementById('in-img-s1').value || mainImg;
+            const s2 = document.getElementById('in-img-s2').value || mainImg;
+            const s3 = document.getElementById('in-img-s3').value || mainImg;
+            
+            const title = document.getElementById('in-title').value;
+            const desc = document.getElementById('in-desc').value;
+            const textColor = document.getElementById('in-color').value;
+            const bgColor = document.getElementById('in-bg').value;
+
+            // อัปเดตการแสดงผล (Front-end)
+            document.getElementById('world-main').style.backgroundImage = `url('${mainImg}')`;
+            document.getElementById('sat1').style.backgroundImage = `url('${s1}')`;
+            document.getElementById('sat2').style.backgroundImage = `url('${s2}')`;
+            document.getElementById('sat3').style.backgroundImage = `url('${s3}')`;
+
+            const titleEl = document.getElementById('txt-title');
+            titleEl.innerText = title;
+            titleEl.style.color = textColor;
+            
+            document.getElementById('txt-desc').innerText = desc;
+            document.body.style.backgroundColor = bgColor;
+            
+            // อัปเดตสีเงาโลกให้เข้ากับธีม
+            document.getElementById('world-main').style.boxShadow = `inset -15px -15px 40px rgba(0,0,0,0.2), 0 0 50px ${textColor}`;
+        }
+
+        // เริ่มต้นโหลดข้อมูล (Initial Load)
+        liveUpdate();
+    </script>
+</body>
+</html>
